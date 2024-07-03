@@ -1,0 +1,595 @@
+---
+title: "FDA PROJECT"
+author: "varun 20MIA1051"
+date: '`r Sys.Date()`'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r import_data}
+circuit = read.csv("D:\\college\\7th sem\\G1 Foundations of Data Analytics\\PROJECT\\data\\circuits.csv")
+constres = read.csv("D:\\college\\7th sem\\G1 Foundations of Data Analytics\\PROJECT\\data\\constructorResults.csv")
+const = read.csv("D:\\college\\7th sem\\G1 Foundations of Data Analytics\\PROJECT\\data\\constructors.csv")
+conststanding = read.csv("D:\\college\\7th sem\\G1 Foundations of Data Analytics\\PROJECT\\data\\constructorStandings.csv")
+drivers = read.csv("D:\\college\\7th sem\\G1 Foundations of Data Analytics\\PROJECT\\data\\drivers.csv")
+driverstandings = read.csv("D:\\college\\7th sem\\G1 Foundations of Data Analytics\\PROJECT\\data\\driverStandings.csv")
+laptime = read.csv("D:\\college\\7th sem\\G1 Foundations of Data Analytics\\PROJECT\\data\\lapTimes.csv")
+qualifying = read.csv("D:\\college\\7th sem\\G1 Foundations of Data Analytics\\PROJECT\\data\\qualifying.csv")
+races = read.csv("D:\\college\\7th sem\\G1 Foundations of Data Analytics\\PROJECT\\data\\races.csv")
+results = read.csv("D:\\college\\7th sem\\G1 Foundations of Data Analytics\\PROJECT\\data\\results.csv")
+seasons = read.csv("D:\\college\\7th sem\\G1 Foundations of Data Analytics\\PROJECT\\data\\seasons.csv")
+status = read.csv("D:\\college\\7th sem\\G1 Foundations of Data Analytics\\PROJECT\\data\\status.csv")
+weather = read.csv("D:\\college\\7th sem\\G1 Foundations of Data Analytics\\PROJECT\\data\\weather.csv")
+```
+```{r}
+names(races)
+```
+
+```{r}
+weather
+```
+
+```{r}
+drivers
+```
+
+
+```{r races}
+races <- merge(races, circuit[, c('circuitId', 'lat', 'lng', 'country')], by.x = 'circuitId', by.y = 'circuitId', all.x = TRUE)
+
+races <- merge(races, circuit[, c("circuitId", "circuitRef")],  by.x = "circuitId", by.y = 'circuitId', all.x = TRUE)
+
+names(races)
+```
+
+```{r results}
+# Assuming 'mydata' is your dataframe
+results <- results[, c("grid", "position", "resultId", "raceId", "driverId", "constructorId", "time", "points", "statusId")]
+results <- merge(results, races[, c("raceId", "circuitId", "circuitRef")], by.x = "raceId", by.y = "raceId", all.x = TRUE)
+results <- merge(results, drivers[,c("driverId", "driverRef", "dob", "nationality")], by.x='driverId', by.y="driverId", all.x = TRUE)
+results <- merge(results, const[, c("constructorId", "constructorRef")],by.x="constructorId", by.y= "constructorId", all.x = TRUE)
+results <- merge(results, status[, c("statusId", "status")], by.x = "statusId", by.y = "statusId", all.x = TRUE)
+results <- merge(results, races[, c("year", "raceId", "circuitRef", "round", "name")], by.x = "raceId",  by.y = "raceId",all.x = TRUE)
+
+results <- results %>%
+  rename(
+    circuitRef = circuitRef.x,
+  )
+
+names(results)
+results
+```
+```{r}
+names(circuit)
+```
+
+```{r driverstandings}
+driverstandings <- merge( driverstandings, races[, c("raceId", "year", "round")], by.x = "raceId", by.y = "raceId", all.x = TRUE)
+driverstandings <- merge( driverstandings, drivers[, c("driverId", "driverRef")],  by.x = "driverId", by.y = "driverId", all.x = TRUE)
+
+driverstandings <- driverstandings %>%  rename( driv_points = points, 
+                                                driv_position = position,
+                                                driv_wins = wins)
+
+names(driverstandings)
+```
+
+ 
+```{r constsanding}
+conststanding <- merge(conststanding, races[, c("raceId", "year", "round")],  by.x="raceId", by.y = "raceId", all.x = TRUE)
+conststanding <- merge(conststanding, const[, c("constructorId", "constructorRef")], by.x = "constructorId", by.y = "constructorId", all.x = TRUE)
+
+conststanding <- conststanding %>% rename(const_points = points,
+                                          const_position = position,
+                                          const_wins = wins)
+
+names(conststanding)
+
+```
+
+```{r qualifying}
+qualifying <- merge(qualifying, drivers[,c("driverId", "driverRef")],  by.x = "driverId",  by.y = "driverId",all.x = TRUE)
+qualifying <- merge(qualifying, const[,c("constructorId", "constructorRef")], by.x = "constructorId", by.y = "constructorId", all.x = TRUE)
+qualifying <- merge(qualifying, races[,c("raceId", "year", "round")],  by.x = "raceId",  by.y = "raceId",all.x = TRUE)
+
+qualifying <- qualifying%>% rename (driverRef = driverRef.x, constructorRef = constructorRef.x, round = round.x, year = year.x)
+
+names(qualifying)
+
+```
+
+```{r}
+# If 'qualifying' is your dataframe
+qualifying$q3[is.na(qualifying$q3) | qualifying$q3 == ""] <- qualifying$q2[is.na(qualifying$q3) | qualifying$q3 == ""]
+qualifying$q2[is.na(qualifying$q2) | qualifying$q2 == ""] <- qualifying$q1[is.na(qualifying$q2) | qualifying$q2 == ""]
+
+names(qualifying)
+```
+
+```{r weather}
+names(weather)
+weather <- merge(weather, races[, c("year", "raceId", "circuitRef", "round")], by.x = "raceId",  by.y = "raceId",all.x = TRUE)
+weather<- weather %>%
+  rename(
+    year = year.x,
+    round = round.x
+  )
+names(qualifying)
+```
+
+
+```{r column select}
+
+races <- races[, c("year", "round", "name","circuitRef", "date", "lat", "lng", "country", "url")]
+qualifying <- qualifying[, c("position", "q2", "year", "round", "driverRef", "constructorRef")]
+conststanding <- conststanding[c("points", "position", "wins", "constructorRef", "year", "round")]
+driverstandings <- driverstandings[, c( "points", "position","wins", "year", "round", "driverRef" )]
+results <- results[, c("grid","position","time","points","driverRef","dob","nationality","constructorRef","status", "year", "round", "name", "circuitRef")]
+weather <- weather [, c("year", "round", "circuitRef", "weather", "weather_warm", "weather_cold", "weather_dry", "weather_wet", "weather_cloudy")]
+qualifying <- qualifying[, c( "driv_position", "q2", "driverRef", "constructorRef", "year", "round")]
+results
+
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+# Filter for 'not finished' status
+not_finished_data <- subset(results, status == "Collision")
+
+# Get the count of occurrences for each driverRef
+driver_counts <- not_finished_data %>%
+  group_by(driverRef) %>%
+  summarise(driver_count = n()) %>%
+  arrange(desc(driver_count))  # Arrange in descending order of count
+
+# Select the top 10 drivers
+top_10_drivers <- driver_counts[1:10,]
+
+# Filter 'not_finished_data' for the top 10 drivers
+not_finished_top_10 <- not_finished_data %>%
+  filter(driverRef %in% top_10_drivers$driverRef)
+
+# Plot a bar chart for the top 10 drivers
+ggplot(data = not_finished_top_10, aes(x = driverRef)) +
+  geom_bar() +
+  labs(title = "Top 10 Drivers with 'collision' Status", x = "Driver Name", y = "Count") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))  # Rotates x-axis labels for better readability
+
+
+```
+```{r}
+# Filter for 'Collision' status
+collision_data <- subset(results, status == "Collision")
+
+# Count occurrences of each constructorRef with 'Collision' status
+constructor_counts <- collision_data %>%
+  group_by(constructorRef) %>%
+  summarise(constructor_count = n()) %>%
+  arrange(desc(constructor_count))  # Arrange in descending order of count
+
+# Select the top 10 constructors
+top_10_constructors <- head(constructor_counts, 10)
+
+# Filter 'collision_data' for the top 10 constructorRef
+top_10_collision_data <- collision_data %>%
+  filter(constructorRef %in% top_10_constructors$constructorRef)
+
+# Plot a bar chart for the top 10 constructorRef with 'Collision' status
+ggplot(data = top_10_collision_data, aes(x = constructorRef)) +
+  geom_bar() +
+  labs(title = "Top 10 Constructors with 'Collision' Status", x = "Constructor Ref", y = "Count") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))  # Rotate x-axis labels for better readability
+
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+
+# Count occurrences of each race name
+name_counts <- races %>%
+  group_by(name) %>%
+  summarise(name_count = n()) %>%
+  arrange(desc(name_count))  # Arrange in descending order of count
+
+# Select the top 25 race names
+top_25_names <- head(name_counts, 25)
+
+# Plot a bar chart for the top 25 race names
+ggplot(data = top_25_names, aes(x = reorder(name, -name_count), y = name_count)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  labs(title = "Top 25 Race Names", x = "Race Names", y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+```
+
+```{r}
+# Find the first race for each name
+first_race <- races %>%
+  group_by(name) %>%
+  summarise(min_year = min(year)) %>%
+  arrange(min_year) %>%
+  ungroup()
+
+# Sort 'name' by the oldest year
+first_race$name <- factor(first_race$name, levels = first_race$name)
+
+# Plot a line chart for the first race for each name
+ggplot(data = first_race, aes(x = name, y = min_year, group = 1)) +
+  geom_line() +
+  labs(title = "First Race by Name (Sorted by Oldest Year)", x = "Race Name", y = "Year") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+```{r}
+# Filter data for positions where position is 1
+top_positions <- results %>%
+  filter(position == 1)
+
+# Count occurrences of each driverRef with position 1
+driver_counts <- top_positions %>%
+  group_by(driverRef) %>%
+  summarise(driver_count = n()) %>%
+  arrange(desc(driver_count)) %>%
+  slice_head(n = 10)  # Select the top 10 driverRef values
+
+# Plot a bar chart for the top 10 driver with position 1
+ggplot(data = driver_counts, aes(x = reorder(driverRef, driver_count), y = driver_count)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  labs(title = "Top 10 Driver with highest wins", x = "DriverRef", y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+```{r}
+# Plotting the map
+ggplot(races, aes(x = lng, y = lat, label = name)) +
+  borders("world", colour = "gray50", fill = "white") +  # Adds world map borders
+  geom_point(color = "blue", size = 3, alpha = 0.8) +    # Plots the points for race locations
+  #geom_text(aes(label = name), hjust = 0, vjust = 0, size = 3) +  # Labels race names
+  labs(title = "Race Locations on World Map", x = "Longitude", y = "Latitude")
+
+
+```
+
+```{r}
+# Filter data for positions where 'position' is 1
+position_1 <- results %>% filter(position == 1)
+
+# Count occurrences of 'circuitRef' for 'position' equals 1
+circuit_position_1 <- position_1 %>%
+  group_by(circuitRef) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count))
+
+# Select the top 15 'circuitRef'
+top_15_circuit <- head(circuit_position_1, 15)
+
+# Plot bar chart for the top 15 'circuitRef' and 'grid' where 'position' is 1
+ggplot(top_15_circuit, aes(x = circuitRef, y = count)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  labs(title = "importancce of pole position to win a race", x = "CircuitRef", y = "Count") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+```{r}
+# Filter data for 'grid' equals 1 and 'position' equals 1
+filtered_results <- results %>%
+  filter(grid == 1, position == 1)
+
+# Count occurrences of 'circuitRef' with 'grid' equals 1 and 'position' equals 1
+circuit_grid_counts <- filtered_results %>%
+  group_by(circuitRef) %>%
+  summarise(count = n()) %>%
+  arrange(desc(count)) %>%
+  slice_head(n = 15)  # Select the top 15 circuitRef values
+
+# Reorder circuitRef by count
+circuit_grid_counts$circuitRef <- factor(circuit_grid_counts$circuitRef, levels = circuit_grid_counts$circuitRef)
+
+# Plotting the bar chart for the top 15 circuitRef
+ggplot(circuit_grid_counts, aes(x = circuitRef, y = count)) +
+  geom_bar(stat = "identity", fill = "skyblue") +
+  labs(title = "Top 15 Circuit where pole position is important to get a win", x = "Circuit Reference", y = "Count") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+```
+
+```{r}
+names(results)
+names(weather)
+```
+
+
+```{r  ML modelling preparation}
+library(dplyr)
+
+# Merge df
+df1 <- races %>%
+  inner_join(weather, by = c('year', 'round', 'circuitRef')) %>%
+  select(-lat, -lng, -country, -weather) #running
+
+df2 <- df1 %>%
+  inner_join(results, by = c('year', 'round', 'circuitRef')) %>%
+  select(-url, -points, -status) #running
+
+df2 <- df2 %>% rename( name = name.x)
+
+names(df2)
+names(driverstandings)
+
+df3 <- df2 %>%
+  left_join(driverstandings, by = c('year', 'round', 'driverRef'))
+
+df4 <- df3 %>%
+  left_join(conststanding, by = c('year', 'round', 'constructorRef'))
+
+final_df <- df4 %>%
+  inner_join(qualifying, by = c('year', 'round', "driv_position")) 
+
+final_df <- final_df %>% rename( time = time.x, driverRef = driverRef.x, constructorRef = constructorRef.x)
+
+final_df <- final_df[, c( "year", "round", "name", "circuitRef", "date", "weather_warm", "weather_cold", "weather_dry", "weather_wet", "weather_cloudy", "grid", "position", "time", "driverRef", "dob", "nationality", "constructorRef", "driv_points", "driv_wins", "q2")]
+
+head(final_df)
+```
+
+```{r}
+rm(df1)
+rm(df2)
+rm(df3)
+rm(df4)
+rm(final_df)
+```
+
+
+```{r}
+library(dplyr)
+library(lubridate)
+
+# Assuming 'final_df' is your dataframe
+
+# Convert columns to datetime
+final_df$date <- as.Date(final_df$date, format = "%d-%m-%y")
+final_df$dob <- as.Date(final_df$dob, format = "%d-%m-%y")
+
+# Calculate driver_age using lubridate
+final_df$driver_age <- as.numeric(interval(final_df$dob, final_df$date) %/% years(1))
+
+# Drop date and date_of_birth columns
+final_df <- select(final_df, -c(date, dob))
+final_df <- select(final_df, -c(q2))
+final_df <- select(final_df, -c(time))
+
+final_df
+```
+
+```{r}
+# Assuming 'final_df' is your dataframe
+
+cols_to_fill_na <- c('driv_points', 'driv_wins', 'position')
+
+# Fill NA values with 0 and convert to integer
+final_df <- final_df %>%
+  mutate(across(all_of(cols_to_fill_na), ~ifelse(is.na(.), 0, as.integer(.))))
+
+# Drop rows with NA values
+final_df <- final_df %>% na.omit()
+
+```
+
+```{r}
+library(dplyr)
+
+# Assuming 'final_df' is your dataframe
+
+cols_to_map <- c('weather_warm', 'weather_cold', 'weather_dry', 'weather_wet', 'weather_cloudy')
+
+# Convert columns to logical (boolean)
+final_df <- final_df %>%
+  mutate_at(vars(cols_to_map), as.logical)
+
+```
+
+```{r}
+library(dplyr)
+
+# Assuming 'final_df' is your dataframe
+
+# Convert 'qualifying_time' column
+final_df$time <- ifelse(final_df$time == '00.000', 0,
+                                    as.numeric(strsplit(as.character(final_df$time), ':')[[1]][2]) +
+                                    60 * as.numeric(strsplit(as.character(final_df$time), ':')[[1]][1]))
+
+# Filter rows where 'qualifying_time' is not equal to 0
+final_df <- final_df[final_df$time != 0, ]
+
+# Sort dataframe
+final_df <- final_df %>% arrange(year, round, grid)
+
+# Calculate 'qualifying_time_diff'
+final_df <- final_df %>%
+  group_by(year, round) %>%
+  mutate(time_diff = as.numeric(qualifying_time) - lag(as.numeric(qualifying_time), default = first(as.numeric(qualifying_time)))) %>%
+  ungroup()
+
+# Calculate 'qualifying_time' cumulatively
+final_df <- final_df %>%
+  group_by(year, round) %>%
+  mutate(time = cumsum(time_diff)) %>%
+  ungroup()
+
+# Drop 'qualifying_time_diff' column
+final_df <- final_df %>%
+  select(-time_diff)
+
+```
+
+```{r dummy variables}
+# Assuming 'final_df' is your dataframe
+levels(final_df$circuitRef)
+levels(final_df$nationality)
+levels(final_df$constructorRef)
+
+# Assuming 'column_name' is the name of the column you want to convert to a factor
+final_df$circuitRef <- factor(final_df$circuitRef)
+
+
+
+# Create dummy variables
+df_dum <- cbind(final_df, model.matrix(~0 + circuitRef + nationality + constructorRef, data = final_df))
+
+# Identify columns to drop based on threshold
+cols_to_drop <- colnames(df_dum)[sapply(colnames(df_dum), function(col) {
+  if (startsWith(col, 'nationality') && sum(df_dum[[col]]) < 140) {
+    return(TRUE)
+  } else if (startsWith(col, 'constructor') && sum(df_dum[[col]]) < 140) {
+    return(TRUE)
+  } else if (startsWith(col, 'circuit_id') && sum(df_dum[[col]]) < 70) {
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+})]
+
+# Drop identified columns
+df_dum <- df_dum[, !(colnames(df_dum) %in% cols_to_drop)]
+
+# View the resulting dataframe
+head(df_dum)
+
+```
+
+```{r}
+has_na <- any(sapply(y_train, function(x) any(is.na(x))))
+
+# Output TRUE if NA is present, otherwise FALSE
+has_na
+```
+
+
+```{r regression}
+library(caret)
+
+# Assuming 'df' is your dataframe in R
+
+# Train-test split
+train <- final_df[final_df$year < 2017, ]
+test <- final_df[final_df$year == 2017, ]
+
+X_train <- train[, !(names(train) %in% c('driverRef', 'position'))]
+y_train <- train$position
+# Scaling
+preproc <- preProcess(X_train)
+X_train_scaled <- predict(preproc, X_train)
+
+
+X_test <- test[, !(names(train) %in% c('driverRef', 'position'))]
+Y_test <- test$position
+# Scaling
+preproc <- preProcess(X_test)
+X_test_scaled <- predict(preproc, X_test)
+
+
+
+
+# Linear Regression
+lr_model <- train(
+  X_train_scaled, y_train,
+  method = "lm",
+  trControl = trainControl(method = "cv", number = 5)
+)
+
+# Summary of best models
+models <- list("Linear Regression" = lr_model)
+
+lapply(models, function(model) {
+  summary(model)
+})
+
+```
+
+```{r classification}
+library(caret)
+
+
+logistic_model <- glm(y_train ~ ., data = as.data.frame(X_train_scaled), family = binomial(link = "logit"))
+
+# Summary of the logistic regression model
+summary(logistic_model)
+```
+
+```{r}
+library(e1071)
+
+# Assuming X_train_scaled and y_train are your scaled training features and target variable
+
+# Define the SVM regression model
+svm_model <- svm(y_train ~ ., data = X_train_scaled, kernel = "radial", gamma = 0.1, cost = 1)
+
+# Print the SVM model summary
+print(svm_model)
+```
+
+```{r}
+test_all_models <- function(X_test_Scaled, Y_test) {
+  # Define models
+  models <- list(
+    "Linear Regression" = lr_model,  # Replace with your linear regression model
+    "Logistic Regression" = logistic_model,    # Replace with your random forest model
+    "SVM" = svm_model  # Replace with your SVM model
+  )
+  
+  # Function to calculate precision and F1 score
+  calculate_metrics <- function(model, X_test, Y_test) {
+    predictions <- predict(model, X_test)
+    confusion_matrix <- confusionMatrix(predictions, Y_test)
+    precision <- confusion_matrix$byClass['Pos Pred Value']
+    f1_score <- confusion_matrix$byClass['F1']
+    
+    return(list(precision = precision, f1_score = f1_score))
+  }
+  
+  # Test models and calculate metrics
+  metrics <- lapply(models, function(model) calculate_metrics(model, X_test_Scaled, Y_test))
+  
+  # Combine results into a data frame
+  results <- data.frame(
+    Model = names(models),
+    Precision = sapply(metrics, function(m) m$precision),
+    F1_Score = sapply(metrics, function(m) m$f1_score)
+  )
+  
+  # Plotting precision and F1 score
+  ggplot(results, aes(x = Model, y = Precision)) +
+    geom_bar(stat = "identity", position = "dodge", fill = "skyblue") +
+    geom_text(aes(label = round(Precision, 3)), vjust = -0.3) +
+    labs(title = "Precision for Different Models", x = "Models", y = "Precision") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  
+  ggplot(results, aes(x = Model, y = F1_Score)) +
+    geom_bar(stat = "identity", position = "dodge", fill = "lightgreen") +
+    geom_text(aes(label = round(F1_Score, 3)), vjust = -0.3) +
+    labs(title = "F1 Score for Different Models", x = "Models", y = "F1 Score") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+}
+
+# Call the function with your X_test_Scaled and Y_test
+test_all_models(X_test_scaled, Y_test)
+
+```
+
